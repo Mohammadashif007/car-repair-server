@@ -30,9 +30,23 @@ async function run() {
 
         const bookingCollection = client.db('carServices').collection('bookings');
 
+        const newBookings = client.db('carService').collection('newBookings');
+
 
         app.get('/services', async(req, res) => {
             const cursor = await servicesCollection.find().toArray();
+            res.send(cursor);
+        })
+
+        app.get('/services/:id', async(req, res) => {
+            const id = req.params.id;
+            const query = {_id: new ObjectId(id)};
+
+            const options = {
+                projection: { _id: 1, title: 1, img:1, price: 1, service_id: 1 },
+              };
+
+            const cursor = await servicesCollection.findOne(query, options);
             res.send(cursor);
         })
 
@@ -43,9 +57,12 @@ async function run() {
             res.send(result);
         })
 
+       
 
+// bookings
         app.get('/bookings', async(req, res) => {
-            
+            const bookings = await bookingCollection.find().toArray();
+            res.send(bookings);
         })
 
         app.post('/bookings', async(req, res) => {
@@ -54,6 +71,45 @@ async function run() {
             const bookedService = await bookingCollection.insertOne(service);
             res.send(bookedService);
             
+        })
+
+//bookings by email
+
+        app.post('/newBookings', async(req, res) => {
+            const booking = req.body;
+            const result = await newBookings.insertOne(booking);
+            res.send(result);
+
+        })
+
+        app.patch('/newBookings/:id', async(req, res) => {
+            const id = req.params.id;
+            const updatedBooking = req.body;
+            const filter = {_id : new ObjectId(id)}
+            const updateDoc = {
+                $set: {
+                    status: updatedBooking.status
+                },
+              };
+
+            const result = await newBookings.updateOne(filter, updateDoc);
+            res.send(result); 
+        } )
+
+        app.delete('/newBookings/:id', async(req, res) => {
+            const id = req.params;
+            const query = {_id: new ObjectId(id)}
+            const result = await newBookings.deleteOne(query);
+            res.send(result);
+        })
+
+        app.get('/newBookings', async(req, res) => {
+            let query = {};
+            if(req.query?.email){
+                query = {email: req.query.email};
+            } 
+            const result = await newBookings.find(query).toArray();
+            res.send(result);
         })
 
 
